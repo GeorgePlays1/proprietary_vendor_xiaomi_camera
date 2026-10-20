@@ -3,18 +3,6 @@
 Experimental vendor-side integration for Xiaomi MIUI Camera on
 Android-based custom ROMs.
 
-## Status
-
-Device and Android-version compatibility are not yet verified.
-
-## Reference and attribution
-
-This project builds on:
-https://github.com/AOSP-for-vili/proprietary_vendor_xiaomi_camera
-
-Original authors retain credit for their contributions. Preserve
-applicable source headers, copyright notices, and license terms.
-
 ## Contents
 
 - Android build configuration
