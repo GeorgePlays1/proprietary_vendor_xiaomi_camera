@@ -62,8 +62,23 @@ function blob_fixup() {
             ;;
         system/lib64/libcamera_algoup_jni.xiaomi.so)
             [ "$2" = "" ] && return 0
+            python3 -c 'import sys; from pathlib import Path
+p=Path(sys.argv[1]); d=p.read_bytes()
+old=bytes.fromhex("08 ad 40 f9"); new=bytes.fromhex("08 a9 40 f9")
+n=d.count(old)
+if n != 1: raise SystemExit(f"ERROR: expected exactly one patch site, found {n}; refusing to patch")
+' "${2}"
             "${PATCHELF}" --add-needed "libgui_shim_miuicamera.so" "${2}"
-            sed -i "s/\x08\xad\x40\xf9/\x08\xa9\x40\xf9/" "${2}"
+            python3 -c 'import sys; from pathlib import Path
+p=Path(sys.argv[1]); d=p.read_bytes()
+old=bytes.fromhex("08 ad 40 f9"); new=bytes.fromhex("08 a9 40 f9")
+n=d.count(old)
+if n != 1: raise SystemExit(f"ERROR: expected exactly one patch site after patchelf, found {n}; refusing to patch")
+t=p.with_name(p.name+".patch-tmp")
+try:
+ t.write_bytes(d.replace(old,new,1)); t.replace(p)
+finally:
+ t.unlink(missing_ok=True)' "${2}"
             ;;
         system/lib64/libgui-xiaomi.so)
             [ "$2" = "" ] && return 0
