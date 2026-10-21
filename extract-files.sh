@@ -62,23 +62,31 @@ function blob_fixup() {
             ;;
         system/lib64/libcamera_algoup_jni.xiaomi.so)
             [ "$2" = "" ] && return 0
-            python3 -c 'import sys; from pathlib import Path
-p=Path(sys.argv[1]); d=p.read_bytes()
-old=bytes.fromhex("08 ad 40 f9"); new=bytes.fromhex("08 a9 40 f9")
-n=d.count(old)
-if n != 1: raise SystemExit(f"ERROR: expected exactly one patch site, found {n}; refusing to patch")
-' "${2}"
-            "${PATCHELF}" --add-needed "libgui_shim_miuicamera.so" "${2}"
-            python3 -c 'import sys; from pathlib import Path
+            (
+                tmp="$(mktemp "${2}.fixup.XXXXXX")"
+                trap 'rm -f "$tmp"' EXIT
+                cp -p "${2}" "$tmp"
+                python3 -c 'import sys; from pathlib import Path
+d=Path(sys.argv[1]).read_bytes()
+n=d.count(bytes.fromhex("08 ad 40 f9"))
+if n != 1: raise SystemExit(f"ERROR: expected exactly one patch site, found {n}; refusing to patch")' "$tmp"
+                "${PATCHELF}" --add-needed "libgui_shim_miuicamera.so" "$tmp"
+                python3 -c 'import os, stat, sys, tempfile
+from pathlib import Path
 p=Path(sys.argv[1]); d=p.read_bytes()
 old=bytes.fromhex("08 ad 40 f9"); new=bytes.fromhex("08 a9 40 f9")
 n=d.count(old)
 if n != 1: raise SystemExit(f"ERROR: expected exactly one patch site after patchelf, found {n}; refusing to patch")
-t=p.with_name(p.name+".patch-tmp")
+mode=stat.S_IMODE(p.stat().st_mode)
+fd,t=tempfile.mkstemp(prefix=p.name+".patch-", dir=str(p.parent))
 try:
- t.write_bytes(d.replace(old,new,1)); t.replace(p)
+ with os.fdopen(fd,"wb") as f: f.write(d.replace(old,new,1))
+ os.chmod(t,mode); os.replace(t,p)
 finally:
- t.unlink(missing_ok=True)' "${2}"
+ if os.path.exists(t): os.unlink(t)' "$tmp"
+                mv -f "$tmp" "${2}"
+                trap - EXIT
+            )
             ;;
         system/lib64/libgui-xiaomi.so)
             [ "$2" = "" ] && return 0
