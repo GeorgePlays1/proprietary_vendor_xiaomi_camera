@@ -1,0 +1,11 @@
+# Proprietary Xiaomi firmware blobs and APKs
+/proprietary/
+
+# Build output
+/out/
+/build/
+
+# Editor files
+.idea/
+.vscode/
+*.swp
